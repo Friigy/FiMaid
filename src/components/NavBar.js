@@ -20,11 +20,8 @@ class NavBar extends Component {
                     <Menu.Item name='home' active={this.state.activeItem === 'home'} onClick={this.handleItemClick}>
                         <Link to="/">Home</Link>
                     </Menu.Item>
-                    <Menu.Item name='scan folder' active={this.state.activeItem === 'scan folder'} onClick={this.handleItemClick}>
-                        <Link to="/scan">Scan folders</Link>
-                    </Menu.Item>
-                    <Menu.Item name='tag folders' active={this.state.activeItem === 'tag folders'} onClick={this.handleItemClick}>
-                        <Link to="/tag">Tag fodlers</Link>
+                    <Menu.Item name='maid' active={this.state.activeItem === 'maid'} onClick={this.handleItemClick}>
+                        <Link to="/maid">Manage Folders</Link>
                     </Menu.Item>
                     <Menu.Menu position='right'>
                         <Menu.Item name='settings' active={this.state.activeItem === 'settings'} onClick={this.handleItemClick}>
