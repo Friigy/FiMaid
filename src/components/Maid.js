@@ -1,7 +1,7 @@
 import React, { Component } from 'react';
 import { Grid, Button, Input, Menu } from 'semantic-ui-react';
 
-class ScanFolders extends Component {
+class Maid extends Component {
     constructor(props, context) {
         super(props, context);
 
@@ -31,32 +31,31 @@ class ScanFolders extends Component {
     pathScan() {
         const fs = window.require('fs');
         var content = "";
-        var folderExists = false;
+        var folderExists = true;
         var updatedManagedFolders = this.state.managedFolders;
-        /*
-        fs.readFile(this.state.pathToNewFolder, (err) => {
-        if (err) {
-        console.log("ERROR");
-        console.log(err);
-        throw err;
-        }
-        });
-        */
+        
         try {
-            content = fs.readFileSync(this.state.pathToNewFolder + "/.fimaid/MAID", 'utf-8');
-            console.log("CONTENT");
-            console.log(content);
-            folderExists = true;
+            content = fs.readFileSync(this.state.pathToNewFolder + "/.fimaid", 'utf-8');
         } catch (err) {
-            console.log("ERROR");
-            console.log(err);
+            folderExists = false;
         }
 
         if (folderExists) {
             updatedManagedFolders.push(content);
             this.setState({ managedFolders: updatedManagedFolders });
+        } else {
+            try {
+                fs.writeFileSync(this.state.pathToNewFolder + "/.fimaid", this.state.pathToNewFolder, 'utf-8');
+            } catch (err) {
+                console.log("ERREUR");
+                console.log(err);
+            }
+            content = fs.readFileSync(this.state.pathToNewFolder + "/.fimaid", 'utf-8');
+            updatedManagedFolders.push(content);
+            this.setState({ managedFolders: updatedManagedFolders });
         }
-        console.log(this.state.managedFolders);
+        // json with nested folder (Json within folderList for folder and etc)
+        // take the json, generate it in the application (relation tree) and work from this
     }
 
     render() {
@@ -68,8 +67,6 @@ class ScanFolders extends Component {
 
                     {
                         this.state.managedFolders.map(folder => {
-                            console.log(folder);
-                            console.log(folder.replace('/', '\\/'));
                             return (
                                 <Menu.Item name={folder} active={this.state.activeItem === folder} onClick={this.handleItemClick}>
                                     {folder.replace('/', '\/')}
@@ -87,4 +84,4 @@ class ScanFolders extends Component {
     }
 }
 
-export default ScanFolders;
+export default Maid;
