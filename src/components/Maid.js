@@ -7,7 +7,7 @@ class Maid extends Component {
 
         this.handleChange = this.handleChange.bind(this);
         this.pathScan = this.pathScan.bind(this);
-        this.test = this.test.bind(this);
+        this.folderScan = this.folderScan.bind(this);
 
         this.state = {
             pathToNewFolder: "",
@@ -24,15 +24,16 @@ class Maid extends Component {
         this.setState({ pathToNewFolder: e.target.value });
     }
     
-    test() {
-        console.log(this.state.managedFolders.toString());
-    }
-    
     pathScan() {
         const fs = window.require('fs');
         var content = "";
         var folderExists = true;
         var updatedManagedFolders = this.state.managedFolders;
+        var folder = {
+            "name": "",
+            "folderList": [],
+            "fileList": []
+        }
         
         try {
             content = fs.readFileSync(this.state.pathToNewFolder + "/.fimaid", 'utf-8');
@@ -47,7 +48,7 @@ class Maid extends Component {
             try {
                 fs.writeFileSync(this.state.pathToNewFolder + "/.fimaid", this.state.pathToNewFolder, 'utf-8');
             } catch (err) {
-                console.log("ERREUR");
+                console.log("ERROR");
                 console.log(err);
             }
             content = fs.readFileSync(this.state.pathToNewFolder + "/.fimaid", 'utf-8');
@@ -56,6 +57,53 @@ class Maid extends Component {
         }
         // json with nested folder (Json within folderList for folder and etc)
         // take the json, generate it in the application (relation tree) and work from this
+
+        folder.name = this.state.pathToNewFolder;
+        var readDir = fs.readdirSync(this.state.pathToNewFolder);
+
+        readDir.map(entry => {
+            console.log(entry);
+            try {
+                var lul = fs.readdirSync(this.state.pathToNewFolder + "/" + entry);
+                folder.folderList.push(this.folderScan(this.state.pathToNewFolder + "/" + entry));
+            } catch (err) {
+                // NOT A DIRECTORY
+                folder.fileList.push(entry);
+            }
+        });
+
+        console.log(folder);
+        try {
+            fs.writeFileSync(this.state.pathToNewFolder + "/.library.json", JSON.stringify(folder), 'utf-8');
+        } catch (err) {
+            console.log("ERROR");
+            console.log(err);
+        }
+    }
+
+    folderScan(path) {
+        const fs = window.require('fs');
+        var folder = {
+            "name": "",
+            "folderList": [],
+            "fileList": []
+        }
+
+        folder.name = path;
+        var readDir = fs.readdirSync(path);
+
+        readDir.map(entry => {
+            console.log(entry);
+            try {
+                var lul = fs.readdirSync(path + "/" + entry);
+                folder.folderList.push(this.folderScan(path + "/" + entry));
+            } catch (err) {
+                // NOT A DIRECTORY
+                folder.fileList.push(entry);
+            }
+        });
+
+        return folder;
     }
 
     render() {
@@ -75,10 +123,6 @@ class Maid extends Component {
                         })
                     }
                 </Menu>
-                
-                <Grid>
-                    <Button type='submit' onClick={this.test}>TEST</Button>
-                </Grid>
             </div>
         );
     }
