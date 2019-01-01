@@ -1,9 +1,11 @@
 import React, { Component } from 'react';
-import { Grid, Button, Input, Menu } from 'semantic-ui-react';
+import { Button, Input, Menu } from 'semantic-ui-react';
 
 class Maid extends Component {
     constructor(props, context) {
         super(props, context);
+
+        const fs = window.require('fs');
 
         this.handleChange = this.handleChange.bind(this);
         this.pathScan = this.pathScan.bind(this);
@@ -14,6 +16,20 @@ class Maid extends Component {
             managedFolders: [],
             activeItem: "",
         };
+
+        var updatedManagedFolders = this.state.managedFolders;
+        
+        try {
+            var content = fs.readFileSync("/home/friij/PersonalProject/fileManager/fimaid/PROFILE", 'utf-8');
+            var lines = content.split('\n');
+            lines.map(line => {
+                updatedManagedFolders.push(line);
+                this.setState({ managedFolders: updatedManagedFolders });
+            });
+        } catch (err) {
+            console.log("PROFILE doesn't exist.");
+            console.log(err);
+        }
     }
     
     handleChange(e) {
@@ -55,24 +71,25 @@ class Maid extends Component {
             updatedManagedFolders.push(content);
             this.setState({ managedFolders: updatedManagedFolders });
         }
-        // json with nested folder (Json within folderList for folder and etc)
-        // take the json, generate it in the application (relation tree) and work from this
+
+        try {
+            fs.appendFileSync("/home/friij/PersonalProject/fileManager/fimaid/PROFILE", this.state.pathToNewFolder, 'utf-8');
+        } catch (err) {
+            console.log("ERROR");
+            console.log(err);
+        }
 
         folder.name = this.state.pathToNewFolder;
         var readDir = fs.readdirSync(this.state.pathToNewFolder);
 
         readDir.map(entry => {
-            console.log(entry);
             try {
-                var lul = fs.readdirSync(this.state.pathToNewFolder + "/" + entry);
                 folder.folderList.push(this.folderScan(this.state.pathToNewFolder + "/" + entry));
             } catch (err) {
-                // NOT A DIRECTORY
                 folder.fileList.push(entry);
             }
         });
 
-        console.log(folder);
         try {
             fs.writeFileSync(this.state.pathToNewFolder + "/.library.json", JSON.stringify(folder), 'utf-8');
         } catch (err) {
@@ -95,10 +112,8 @@ class Maid extends Component {
         readDir.map(entry => {
             console.log(entry);
             try {
-                var lul = fs.readdirSync(path + "/" + entry);
                 folder.folderList.push(this.folderScan(path + "/" + entry));
             } catch (err) {
-                // NOT A DIRECTORY
                 folder.fileList.push(entry);
             }
         });

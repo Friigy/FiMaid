@@ -1,6 +1,14 @@
 const { app, BrowserWindow } = require('electron');
+const fs = require('fs');
 
 let win = null;
+
+try {
+    fs.writeFileSync("./PROFILE", "", 'utf-8');
+} catch (err) {
+    console.log("ERROR");
+    console.log(err);
+}
 
 function createWindow() {
     // Initialize the window to our specified dimensions
