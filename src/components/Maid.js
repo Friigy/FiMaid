@@ -18,6 +18,7 @@ class Maid extends Component {
 
     componentWillMount() {
         const fs = window.require('fs');
+        var profileDiffers = false;
         var updatedManagedFolders = this.state.managedFolders;
         
         try {
@@ -25,10 +26,35 @@ class Maid extends Component {
             var lines = content.split('\n');
             lines.map(line => {
                 if (line !== "Managed Folders:") {
-                    updatedManagedFolders.push(line);
-                    this.setState({ managedFolders: updatedManagedFolders });
+                    var managedFolderActive = true;
+
+                    try {
+                        var tmp = fs.readFileSync(line + "/.fimaid", 'utf-8');
+                    } catch (err) {
+                        managedFolderActive = false;
+                    }
+
+                    if (managedFolderActive) {
+                        updatedManagedFolders.push(line);
+                    } else {
+                        profileDiffers = true;
+                    }
                 }
             });
+
+            if (profileDiffers) {
+                try {
+                    fs.writeFileSync("./PROFILE", "Managed Folders:", 'utf-8');
+                    updatedManagedFolders.map(managedFolders => {
+                        fs.appendFileSync("/home/friij/PersonalProject/fileManager/fimaid/PROFILE", "\n" + managedFolders, 'utf-8');
+                    });
+                } catch (err) {
+                    console.log("ERROR");
+                    console.log(err);
+                }
+            }
+        
+            this.setState({ managedFolders: updatedManagedFolders });
         } catch (err) {
             console.log("PROFILE doesn't exist.");
             console.log(err);
