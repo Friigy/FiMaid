@@ -3,11 +3,22 @@ const fs = require('fs');
 
 let win = null;
 
+var profileExist = true;
+var content = "";
+
 try {
-    fs.writeFileSync("./PROFILE", "", 'utf-8');
+    content = fs.readFileSync("./PROFILE", 'utf-8');
 } catch (err) {
-    console.log("ERROR");
-    console.log(err);
+    profileExist = false;
+}
+
+if (!profileExist) {
+    try {
+        fs.writeFileSync("./PROFILE", "Managed Folders:", 'utf-8');
+    } catch (err) {
+        console.log("ERROR");
+        console.log(err);
+    }
 }
 
 function createWindow() {
