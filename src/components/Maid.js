@@ -10,7 +10,7 @@ class Maid extends Component {
         this.folderScan = this.folderScan.bind(this);
         this.activateFolderItem = this.activateFolderItem.bind(this);
         this.navigatingFolder = this.navigatingFolder.bind(this);
-        this.navigatingBread = this.navigatingFolder.bind(this);
+        this.navigatingBread = this.navigatingBread.bind(this);
 
         this.state = {
             pathToNewFolder: "",
@@ -76,10 +76,7 @@ class Maid extends Component {
         this.setState({ pathTargetedFolder: newPath });
     }
   
-    navigatingFolder = (newFolder) => {
-        var newPath = this.state.pathTargetedFolder + '/' + newFolder;
-        this.setState({ pathTargetedFolder: newPath });
-    }
+    navigatingBread = (newFolder) => this.setState({ pathTargetedFolder: newFolder });
     
     pathScan() {
         const fs = window.require('fs');
@@ -192,17 +189,27 @@ class Maid extends Component {
         var activeBread = allTheTargetedPath[allTheTargetedPath.length - 1];
 
         var pathToBread = "";
+        var breadcrumbsFolderPaths = [];
 
-        for (var i = 0; i < allThePath.length - 2; i++) {
+        for (var i = 0; i < allThePath.length; i++) {
             pathToBread += "/" + allThePath[i];
         }
 
+        breadcrumbsFolderPaths.push({ "folder": active, "pathToFolder": pathToBread });
+
+        for (var i = 0; i < (allTheTargetedPath.length - allThePath.length); i++) {
+            pathToBread += "/" + allTheTargetedPath[i + allThePath.length];
+            breadcrumbsFolderPaths.push({ "folder": allTheTargetedPath[i + allThePath.length], "pathToFolder": pathToBread });
+        }
+
+        console.log("allthepath");
+        console.log(allThePath);
+        console.log("allthetargetedpath");
+        console.log(allTheTargetedPath);
         console.log("bread");
         console.log(pathToBread);
-
-        for (var i = 0; i < allThePath.length - 1; i++) {
-            allTheTargetedPath.shift();
-        }
+        console.log("breadcrumb");
+        console.log(breadcrumbsFolderPaths);
         return (
             <Grid>
                 <Grid.Column width={3}>
@@ -239,12 +246,12 @@ class Maid extends Component {
                         </Header>
                         <Breadcrumb>
                             {
-                                allTheTargetedPath.map(folder => {
-                                    if (activeBread === folder) {
+                                breadcrumbsFolderPaths.map(folder => {
+                                    if (activeBread === folder.folder) {
                                         return (
                                             <span>
-                                                <Breadcrumb.Section active={activeBread === folder}>
-                                                    {folder}
+                                                <Breadcrumb.Section active={activeBread === folder.folder}>
+                                                    {folder.folder}
                                                 </Breadcrumb.Section>
                                                 <Breadcrumb.Divider icon='right angle'/>
                                             </span>
@@ -252,8 +259,8 @@ class Maid extends Component {
                                     } else {
                                         return (
                                             <span>
-                                                <Breadcrumb.Section link onClick={this.navigatingFolder}>
-                                                    {folder}
+                                                <Breadcrumb.Section link onClick={this.navigatingBread.bind(this, folder.pathToFolder)}>
+                                                    {folder.folder}
                                                 </Breadcrumb.Section>
                                                 <Breadcrumb.Divider icon='right angle'/>
                                             </span>
