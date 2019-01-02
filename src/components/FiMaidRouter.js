@@ -11,23 +11,25 @@ class FiMaidRouter extends Component {
             <BrowserRouter>
                 <div>
                     <NavBar />
-                    <Switch>
-                        <Route
-                            exact
-                            path="/"
-                            component={Home}
-                        />
-                        <Route
-                            exact
-                            path="/maid"
-                            component={Maid}
-                        />
-                        <Route
-                            exact
-                            path="/settings"
-                            component={Settings}
-                        />
-                    </Switch>
+                    <div>
+                        <Switch>
+                            <Route
+                                exact
+                                path="/"
+                                component={Home}
+                            />
+                            <Route
+                                exact
+                                path="/maid"
+                                component={Maid}
+                            />
+                            <Route
+                                exact
+                                path="/settings"
+                                component={Settings}
+                            />
+                        </Switch>
+                    </div>
                 </div>
             </BrowserRouter>
         );

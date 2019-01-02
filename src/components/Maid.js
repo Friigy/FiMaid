@@ -1,5 +1,5 @@
 import React, { Component } from 'react';
-import { Button, Input, Menu } from 'semantic-ui-react';
+import { Grid, Button, Input, Menu, Header, Icon, Container, List, Breadcrumb } from 'semantic-ui-react';
 
 class Maid extends Component {
     constructor(props, context) {
@@ -8,11 +8,15 @@ class Maid extends Component {
         this.handleChange = this.handleChange.bind(this);
         this.pathScan = this.pathScan.bind(this);
         this.folderScan = this.folderScan.bind(this);
+        this.activateFolderItem = this.activateFolderItem.bind(this);
+        this.navigatingFolder = this.navigatingFolder.bind(this);
+        this.navigatingBread = this.navigatingFolder.bind(this);
 
         this.state = {
             pathToNewFolder: "",
             managedFolders: [],
-            activeItem: "",
+            activeFolderItem: "",
+            pathTargetedFolder: ""
         };
     }
 
@@ -64,9 +68,17 @@ class Maid extends Component {
     handleChange(e) {
         this.setState({ pathToNewFolder: e.target.value });
     }
-    
-    handleItemClick(e) {
-        this.setState({ pathToNewFolder: e.target.value });
+  
+    activateFolderItem = (e, { name }) => this.setState({ activeFolderItem: name, pathTargetedFolder: name });
+  
+    navigatingFolder = (newFolder) => {
+        var newPath = this.state.pathTargetedFolder + '/' + newFolder;
+        this.setState({ pathTargetedFolder: newPath });
+    }
+  
+    navigatingFolder = (newFolder) => {
+        var newPath = this.state.pathTargetedFolder + '/' + newFolder;
+        this.setState({ pathTargetedFolder: newPath });
     }
     
     pathScan() {
@@ -156,23 +168,145 @@ class Maid extends Component {
     }
 
     render() {
-        return (
-            <div>
-                <Menu pointing secondary vertical>
-                    <Input type='text' placeholder='Your path here' onChange={this.handleChange} />
-                    <Button type='submit' onClick={this.pathScan}>+</Button>
+        const fs = window.require('fs');
+        var folderList = [];
+        var fileList = [];
+        if (this.state.activeFolderItem !== "") {
+            var readDir = fs.readdirSync(this.state.pathTargetedFolder);
+    
+            readDir.map(entry => {
+                try {
+                    this.folderScan(this.state.pathTargetedFolder + "/" + entry)
+                    folderList.push(entry);
+                } catch (err) {
+                    fileList.push(entry);
+                }
+            });
+        }
 
-                    {
-                        this.state.managedFolders.map(folder => {
-                            return (
-                                <Menu.Item name={folder} active={this.state.activeItem === folder} onClick={this.handleItemClick}>
-                                    {folder.replace('/', '\/')}
-                                </Menu.Item>
-                            );
-                        })
-                    }
-                </Menu>
-            </div>
+        var allThePath = this.state.activeFolderItem.split('/');
+        allThePath.shift();
+        var active = allThePath[allThePath.length - 1];
+        var allTheTargetedPath = this.state.pathTargetedFolder.split('/');
+        allTheTargetedPath.shift();
+        var activeBread = allTheTargetedPath[allTheTargetedPath.length - 1];
+
+        var pathToBread = "";
+
+        for (var i = 0; i < allThePath.length - 2; i++) {
+            pathToBread += "/" + allThePath[i];
+        }
+
+        console.log("bread");
+        console.log(pathToBread);
+
+        for (var i = 0; i < allThePath.length - 1; i++) {
+            allTheTargetedPath.shift();
+        }
+        return (
+            <Grid>
+                <Grid.Column width={3}>
+                    <Menu fluid pointing secondary vertical>
+                        <Menu.Item name="scan">
+                            <div>
+                                <Input type='text' placeholder='Your path here' onChange={this.handleChange} />
+                                <Button type='submit' onClick={this.pathScan}>+</Button>
+                            </div>
+                        </Menu.Item>
+
+                        <Menu.Item name="scan">
+                            <Header as='h1'>
+                                Managed folders
+                            </Header>
+                        </Menu.Item>
+                        {
+                            this.state.managedFolders.map(folder => {
+                                return (
+                                    <Menu.Item name={folder} active={this.state.activeFolderItem === folder} onClick={this.activateFolderItem}>
+                                        <Icon name='right angle' /> {folder.replace('/', '\/')}
+                                    </Menu.Item>
+                                );
+                            })
+                        }
+                    </Menu>
+                </Grid.Column>
+
+                <Grid.Column stretched width={13}>
+                    <Container fluid>
+
+                        <Header as='h2'>
+                            Navigating {this.state.activeFolderItem}
+                        </Header>
+                        <Breadcrumb>
+                            {
+                                allTheTargetedPath.map(folder => {
+                                    if (activeBread === folder) {
+                                        return (
+                                            <span>
+                                                <Breadcrumb.Section active={activeBread === folder}>
+                                                    {folder}
+                                                </Breadcrumb.Section>
+                                                <Breadcrumb.Divider icon='right angle'/>
+                                            </span>
+                                        );
+                                    } else {
+                                        return (
+                                            <span>
+                                                <Breadcrumb.Section link onClick={this.navigatingFolder}>
+                                                    {folder}
+                                                </Breadcrumb.Section>
+                                                <Breadcrumb.Divider icon='right angle'/>
+                                            </span>
+                                        );
+                                    }
+                                })
+                            }
+                        </Breadcrumb>
+                        <Menu secondary>
+                            {
+                                this.state.activeFolderItem !== "" ?
+                                <Grid>
+                                    {
+                                        folderList.map(entry => {
+                                            return (
+                                                <Grid.Column width={2}>
+                                                    <Menu.Item onClick={this.navigatingFolder.bind(this, entry)}>
+                                                        <Container textAlign='center'>
+                                                                <Icon
+                                                                    name='folder'
+                                                                    size='huge'
+                                                                /> <br />
+                                                                {entry}
+                                                        </Container>
+                                                    </Menu.Item>
+                                                </Grid.Column>
+                                            )
+                                        })
+                                    }
+                                    {
+                                        fileList.map(entry => {
+                                            return (
+                                                <Grid.Column width={2}>
+                                                    <Menu.Item>
+                                                        <Container textAlign='center'>
+                                                                <Icon
+                                                                    name='file outline'
+                                                                    size='huge'
+                                                                /> <br />
+                                                                {entry}
+                                                        </Container>
+                                                    </Menu.Item>
+                                                </Grid.Column>
+                                            )
+                                        })
+                                    }
+                                </Grid>
+                                : "Select a folder"
+                            }
+                        </Menu>
+                    </Container>
+                </Grid.Column>
+            </Grid>
         );
     }
 }
