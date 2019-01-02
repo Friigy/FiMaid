@@ -1,19 +1,22 @@
 import React, { Component } from 'react';
-import { Grid, Button, Input, Menu, Header, Icon, Container, List, Breadcrumb } from 'semantic-ui-react';
+import { Grid, Input, Menu, Header, Icon, Container, Breadcrumb } from 'semantic-ui-react';
 
 class Maid extends Component {
     constructor(props, context) {
         super(props, context);
 
-        this.handleChange = this.handleChange.bind(this);
+        this.handleChangeFolder = this.handleChangeFolder.bind(this);
+        this.handleChangeTag = this.handleChangeTag.bind(this);
         this.pathScan = this.pathScan.bind(this);
         this.folderScan = this.folderScan.bind(this);
+        this.addTagToFolder = this.addTagToFolder.bind(this);
         this.activateFolderItem = this.activateFolderItem.bind(this);
         this.navigatingFolder = this.navigatingFolder.bind(this);
         this.navigatingBread = this.navigatingBread.bind(this);
 
         this.state = {
             pathToNewFolder: "",
+            tagToAdd: "",
             managedFolders: [],
             activeFolderItem: "",
             pathTargetedFolder: ""
@@ -65,19 +68,6 @@ class Maid extends Component {
         }
     }
     
-    handleChange(e) {
-        this.setState({ pathToNewFolder: e.target.value });
-    }
-  
-    activateFolderItem = (e, { name }) => this.setState({ activeFolderItem: name, pathTargetedFolder: name });
-  
-    navigatingFolder = (newFolder) => {
-        var newPath = this.state.pathTargetedFolder + '/' + newFolder;
-        this.setState({ pathTargetedFolder: newPath });
-    }
-  
-    navigatingBread = (newFolder) => this.setState({ pathTargetedFolder: newFolder });
-    
     pathScan() {
         const fs = window.require('fs');
         var content = "";
@@ -85,6 +75,7 @@ class Maid extends Component {
         var updatedManagedFolders = this.state.managedFolders;
         var folder = {
             "name": "",
+            "tags": [],
             "folderList": [],
             "fileList": []
         }
@@ -146,6 +137,7 @@ class Maid extends Component {
         const fs = window.require('fs');
         var folder = {
             "name": "",
+            "tags": [],
             "folderList": [],
             "fileList": []
         }
@@ -163,11 +155,91 @@ class Maid extends Component {
 
         return folder;
     }
+    
+    handleChangeTag(e) {
+        this.setState({ tagToAdd: e.target.value });
+    }
+    
+    addTagToFolder() {
+        const fs = window.require('fs');
+        var content = "";
+        var jsonExists = true;
+        var jsonContent = [];
+        var arrayManagedFolder = this.state.activeFolderItem.split('/');
+        var pathManagedFolder = this.state.activeFolderItem;
+        arrayManagedFolder.shift();
+        var arrayTargetFolder = this.state.pathTargetedFolder.split('/');
+        arrayTargetFolder.shift();
+
+        var i;
+        var j;
+
+        for (i = 0; i < arrayManagedFolder.length; i++) {
+            arrayTargetFolder.shift();
+        }
+
+        try {
+            content = fs.readFileSync(this.state.activeFolderItem + "/.fimaid.json", 'utf-8');
+        } catch (err) {
+            jsonExists = false;
+        }
+
+        if (jsonExists) {
+            jsonContent = JSON.parse(content);
+
+            jsonContent.tags.push(this.state.tagToAdd);
+
+            pathManagedFolder += "/" + arrayTargetFolder.shift();
+
+            for (j = 0; j < jsonContent.folderList.length; j++) {
+                if (pathManagedFolder === jsonContent.folderList[j].name) {
+                    jsonContent.folderList[j] = this.addTagToFolderSon(pathManagedFolder, arrayTargetFolder, this.state.tagToAdd, jsonContent.folderList[j]);
+                }
+            }
+
+            try {
+                fs.writeFileSync(this.state.activeFolderItem + "/.fimaid.json", JSON.stringify(jsonContent), 'utf-8')
+            } catch (err) {
+                console.log("ERROR");
+                console.log(err);
+            }
+        }
+    }
+
+    addTagToFolderSon(path, arrayTargetFolder, tag, jsonContent) {
+        var j;
+        
+        jsonContent.tags.push(tag);
+
+        path += "/" + arrayTargetFolder.shift();
+
+        for (j = 0; j < jsonContent.folderList.length; j++) {
+            if (path === jsonContent.folderList[j].name) {
+                jsonContent.folderList[j] = this.addTagToFolderSon(path, arrayTargetFolder, tag, jsonContent.folderList[j]);
+            }
+        }
+
+        return jsonContent;
+    }
+    
+    handleChangeFolder(e) {
+        this.setState({ pathToNewFolder: e.target.value });
+    }
+  
+    activateFolderItem = (e, { name }) => this.setState({ activeFolderItem: name, pathTargetedFolder: name });
+  
+    navigatingFolder = (newFolder) => {
+        var newPath = this.state.pathTargetedFolder + '/' + newFolder;
+        this.setState({ pathTargetedFolder: newPath });
+    }
+  
+    navigatingBread = (newFolder) => this.setState({ pathTargetedFolder: newFolder });
 
     render() {
         const fs = window.require('fs');
         var folderList = [];
         var fileList = [];
+        var active = "";
         if (this.state.activeFolderItem !== "") {
             var readDir = fs.readdirSync(this.state.pathTargetedFolder);
     
@@ -183,7 +255,7 @@ class Maid extends Component {
 
         var allThePath = this.state.activeFolderItem.split('/');
         allThePath.shift();
-        var active = allThePath[allThePath.length - 1];
+        active = allThePath[allThePath.length - 1];
         var allTheTargetedPath = this.state.pathTargetedFolder.split('/');
         allTheTargetedPath.shift();
         var activeBread = allTheTargetedPath[allTheTargetedPath.length - 1];
@@ -197,28 +269,24 @@ class Maid extends Component {
 
         breadcrumbsFolderPaths.push({ "folder": active, "pathToFolder": pathToBread });
 
-        for (var i = 0; i < (allTheTargetedPath.length - allThePath.length); i++) {
+        for (i = 0; i < (allTheTargetedPath.length - allThePath.length); i++) {
             pathToBread += "/" + allTheTargetedPath[i + allThePath.length];
             breadcrumbsFolderPaths.push({ "folder": allTheTargetedPath[i + allThePath.length], "pathToFolder": pathToBread });
         }
-
-        console.log("allthepath");
-        console.log(allThePath);
-        console.log("allthetargetedpath");
-        console.log(allTheTargetedPath);
-        console.log("bread");
-        console.log(pathToBread);
-        console.log("breadcrumb");
-        console.log(breadcrumbsFolderPaths);
         return (
             <Grid>
                 <Grid.Column width={3}>
                     <Menu fluid pointing secondary vertical>
                         <Menu.Item name="scan">
-                            <div>
-                                <Input type='text' placeholder='Your path here' onChange={this.handleChange} />
-                                <Button type='submit' onClick={this.pathScan}>+</Button>
-                            </div>
+                            <Input
+                                icon='folder'
+                                iconPosition='left'
+                                type='text'
+                                placeholder='Your path here'
+                                onChange={this.handleChangeFolder}
+                                action={{ color: 'violet', content: 'Add', onClick: this.pathScan }}
+                                actionPosition='right'
+                            />
                         </Menu.Item>
 
                         <Menu.Item name="scan">
@@ -230,7 +298,7 @@ class Maid extends Component {
                             this.state.managedFolders.map(folder => {
                                 return (
                                     <Menu.Item name={folder} active={this.state.activeFolderItem === folder} onClick={this.activateFolderItem}>
-                                        <Icon name='right angle' /> {folder.replace('/', '\/')}
+                                        <span><Icon name='right angle' /> {folder.replace('/', '\/')}</span>
                                     </Menu.Item>
                                 );
                             })
@@ -240,11 +308,35 @@ class Maid extends Component {
 
                 <Grid.Column stretched width={13}>
                     <Container fluid>
+                        {
+                            this.state.activeFolderItem !== "" ?
+                            <Grid.Row>
+                                <Header as='h2'>
+                                    Tags for {activeBread}
+                                </Header>
+                                <Input
+                                    icon='tags'
+                                    iconPosition='left'
+                                    type='text'
+                                    placeholder='tag'
+                                    onChange={this.handleChangeTag}
+                                    action={{ color: 'violet', content: 'Add', onClick: this.addTagToFolder }}
+                                    actionPosition='right'
+                                />
+                            </Grid.Row>
+                            : null
+                        }
 
-                        <Header as='h2'>
-                            Navigating {this.state.activeFolderItem}
-                        </Header>
-                        <Breadcrumb>
+                        {
+                            this.state.activeFolderItem !== "" ?
+                            <Header as='h2'>
+                                Navigating {active}
+                            </Header>
+                            : null
+                        }
+                        {
+                            this.state.activeFolderItem !== ""  ?
+                            <Breadcrumb>
                             {
                                 breadcrumbsFolderPaths.map(folder => {
                                     if (activeBread === folder.folder) {
@@ -268,7 +360,9 @@ class Maid extends Component {
                                     }
                                 })
                             }
-                        </Breadcrumb>
+                            </Breadcrumb>
+                            : null
+                        }
                         <Menu secondary>
                             {
                                 this.state.activeFolderItem !== "" ?
