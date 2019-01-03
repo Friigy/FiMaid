@@ -16,6 +16,9 @@ class Maid extends Component {
         this.obtainListof = this.obtainListof.bind(this);
         this.handleChangeSearchTag = this.handleChangeSearchTag.bind(this);
         this.addTagToSearch = this.addTagToSearch.bind(this);
+        this.addTagToInclude = this.addTagToInclude.bind(this);
+        this.addTagToExclude = this.addTagToExclude.bind(this);
+        this.deleteTagFromExclude = this.deleteTagFromExclude.bind(this);
 
         this.state = {
             pathToNewFolder: "",
@@ -196,7 +199,7 @@ class Maid extends Component {
             if (!jsonContent.tags.includes(this.state.tagToAdd)) {
                 jsonContent.tags.push(this.state.tagToAdd);
             }
-
+ 
             pathManagedFolder += "/" + arrayTargetFolder.shift();
 
             for (j = 0; j < jsonContent.folderList.length; j++) {
@@ -294,14 +297,56 @@ class Maid extends Component {
     addTagToSearch() {
         var tagToSearch = this.state.tagToSearch.split(',');
         var newIncludeTags = this.state.includeTag;
+        var newExcludeTags = this.state.excludeTag;
 
         for (var i = 0; i < tagToSearch.length; i++) {
-            if (!newIncludeTags.includes(tagToSearch[i])) {
+            if (!newIncludeTags.includes(tagToSearch[i]) && !newExcludeTags.includes(tagToSearch[i])) {
                 newIncludeTags.push(tagToSearch[i]);
             }
         }
 
-        this.setState({ includeTag: newIncludeTags })
+        this.setState({ includeTag: newIncludeTags });
+    }
+    
+    addTagToInclude(tag) {
+        var newIncludeTags = this.state.includeTag;
+        var newExcludeTags = this.state.excludeTag;
+
+        if (!newIncludeTags.includes(tag) && !newExcludeTags.includes(tag)) {
+            newIncludeTags.push(tag);
+        }
+
+        this.setState({ includeTag: newIncludeTags });
+    }
+    
+    addTagToExclude(tag) {
+        var oldIncludeTags = this.state.includeTag;
+        var newIncludeTags = [];
+        var newExcludeTags = this.state.excludeTag;
+
+        newExcludeTags.push(tag);
+        newIncludeTags.indexOf(tag);
+
+        for (var i = 0; i < oldIncludeTags.length; i++) {
+            if (oldIncludeTags[i] !== tag) {
+                newIncludeTags.push(oldIncludeTags[i]);
+            }
+        }
+
+        this.setState({ "includeTag": newIncludeTags, "excludeTag": newExcludeTags });
+    }
+    
+    deleteTagFromExclude(tag) {
+        var oldExcludeTags = this.state.excludeTag;
+        var newExcludeTags = [];
+
+        for (var i = 0; i < oldExcludeTags.length; i++) {
+            if (oldExcludeTags[i] !== tag) {
+                newExcludeTags.push(oldExcludeTags[i]);
+            }
+        }
+
+        this.setState({ excludeTag: newExcludeTags });
     }
 
     render() {
@@ -357,6 +402,7 @@ class Maid extends Component {
         }
 
         var tagsToInclude = this.state.includeTag;
+        var tagsToExclude = this.state.excludeTag;
         return (
             <Grid>
                 <Grid.Column width={3}>
@@ -421,7 +467,7 @@ class Maid extends Component {
                                 {
                                     tagList.map(tag => {
                                         return (
-                                            <Label color={colorList[Math.floor((Math.random() * 10))]} image>
+                                            <Label color={colorList[Math.floor((Math.random() * 10))]} image onClick={this.addTagToInclude.bind(this, tag)}>
                                                 <Icon name='tags' /> {tag}
                                             </Label>
                                         )
@@ -462,7 +508,16 @@ class Maid extends Component {
                                 {
                                     tagsToInclude.map(tag => {
                                         return (
-                                            <Label color='green' image>
+                                            <Label color='green' image onClick={this.addTagToExclude.bind(this, tag)}>
+                                                <Icon name='tags' /> {tag}
+                                            </Label>
+                                        )
+                                    })
+                                }
+                                {
+                                    tagsToExclude.map(tag => {
+                                        return (
+                                            <Label color='red' image onClick={this.deleteTagFromExclude.bind(this, tag)}>
                                                 <Icon name='tags' /> {tag}
                                             </Label>
                                         )
@@ -516,6 +571,8 @@ class Maid extends Component {
                                         folderList.map(entry => {
                                             var colorFolder = "";
                                             var numberOfInclusion = [];
+                                            var numberOfExclusion = [];
+                                            
                                             for (var i = 0; i < this.state.includeTag.length; i++) {
                                                 if (entry.tags.includes(this.state.includeTag[i])) {
                                                     numberOfInclusion.push("true");
@@ -523,15 +580,27 @@ class Maid extends Component {
                                                     numberOfInclusion.push("false");
                                                 }
                                             }
-
-                                            console.log(numberOfInclusion)
+                                            
+                                            for (i = 0; i < this.state.excludeTag.length; i++) {
+                                                if (entry.tags.includes(this.state.excludeTag[i])) {
+                                                    numberOfExclusion.push("true");
+                                                } else {
+                                                    numberOfExclusion.push("false");
+                                                }
+                                            }
 
                                             if (numberOfInclusion.includes("true") && numberOfInclusion.includes("false")) {
-                                                colorFolder = "yellow";
+                                                colorFolder = "olive";
                                             } else if (numberOfInclusion.includes("true")) {
                                                 colorFolder = "green";
                                             } else {
-                                                colorFolder = "black";
+                                                colorFolder = "grey";
+                                            }
+
+                                            if (numberOfExclusion.includes("true") && numberOfInclusion.includes("true")) {
+                                                colorFolder = "orange";
+                                            } else if (numberOfExclusion.includes("true")) {
+                                                colorFolder = "red";
                                             }
                                             return (
                                                 <Grid.Column width={2}>
@@ -558,6 +627,7 @@ class Maid extends Component {
                                                                 <Icon
                                                                     name='file outline'
                                                                     size='huge'
+                                                                    color='grey'
                                                                 /> <br />
                                                                 {entry}
                                                         </Container>
