@@ -10,20 +10,20 @@ var content = "";
 const path = require('path');
 
 try {
-    content = fs.readFileSync("./PROFILE", 'utf-8');
+    content = fs.readFileSync(path.join(path.dirname(process.mainModule.filename), "PROFILE"), 'utf-8');
 } catch (err) {
     profileExist = false;
 }
 
 try {
-    content = fs.readFileSync("./src/resources/mainPath", 'utf-8');
+    content = fs.readFileSync(path.join(path.dirname(process.mainModule.filename), "src", "resources", "mainPath"), 'utf-8');
 } catch (err) {
     resourceExist = false;
 }
 
 if (!profileExist) {
     try {
-        fs.writeFileSync("./PROFILE", "Managed Folders:", 'utf-8');
+        fs.writeFileSync(path.join(path.dirname(process.mainModule.filename), "PROFILE"), "Managed Folders:", 'utf-8');
     } catch (err) {
         console.log("ERROR");
         console.log(err);
@@ -32,7 +32,7 @@ if (!profileExist) {
 
 if (!resourceExist) {
     try {
-        fs.writeFileSync("./src/resources/mainPath", path.dirname(process.mainModule.filename), 'utf-8');
+        fs.writeFileSync(path.join(path.dirname(process.mainModule.filename), "src", "resources", "mainPath"), path.dirname(process.mainModule.filename), 'utf-8');
     } catch (err) {
         console.log("ERROR");
         console.log(err);
