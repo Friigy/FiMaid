@@ -21,6 +21,7 @@ class Maid extends Component {
         this.deleteTagFromExclude = this.deleteTagFromExclude.bind(this);
 
         this.state = {
+            pathToMain : "",
             pathToNewFolder: "",
             tagToAdd: "",
             managedFolders: [],
@@ -34,18 +35,21 @@ class Maid extends Component {
 
     componentWillMount() {
         const fs = window.require('fs');
+        const path = require('path');
         var profileDiffers = false;
         var updatedManagedFolders = this.state.managedFolders;
-        
+        var content = "";
+        const fileWithMainPath = require("../resources/mainPath.json");
+
         try {
-            var content = fs.readFileSync("/home/friij/PersonalProject/fileManager/fimaid/PROFILE", 'utf-8');
+            content = fs.readFileSync(path.join(fileWithMainPath.mainPath, "PROFILE"), 'utf-8');
             var lines = content.split('\n');
             lines.map(line => {
                 if (line !== "Managed Folders:") {
                     var managedFolderActive = true;
 
                     try {
-                        var tmp = fs.readFileSync(line + "/.fimaid", 'utf-8');
+                        var tmp = fs.readFileSync(path.join(line, ".fimaid"), 'utf-8');
                     } catch (err) {
                         managedFolderActive = false;
                     }
@@ -60,16 +64,15 @@ class Maid extends Component {
 
             if (profileDiffers) {
                 try {
-                    fs.writeFileSync("./PROFILE", "Managed Folders:", 'utf-8');
+                    fs.writeFileSync(path.join(fileWithMainPath.mainPath, "PROFILE"), "Managed Folders:", 'utf-8');
                     updatedManagedFolders.map(managedFolders => {
-                        fs.appendFileSync("/home/friij/PersonalProject/fileManager/fimaid/PROFILE", "\n" + managedFolders, 'utf-8');
+                        fs.appendFileSync(path.join(fileWithMainPath.mainPath, "PROFILE"), "\n" + managedFolders, 'utf-8');
                     });
                 } catch (err) {
                     console.log("ERROR");
                     console.log(err);
                 }
             }
-        
             this.setState({ managedFolders: updatedManagedFolders });
         } catch (err) {
             console.log("PROFILE doesn't exist.");
@@ -79,9 +82,11 @@ class Maid extends Component {
     
     pathScan() {
         const fs = window.require('fs');
+        const path = require('path');
         var content = "";
         var folderExists = true;
         var updatedManagedFolders = this.state.managedFolders;
+        const fileWithMainPath = require(path.join("..", "resources", "mainPath.json"));
         var folder = {
             "name": "",
             "tags": [],
@@ -95,7 +100,7 @@ class Maid extends Component {
             console.log("This folder is already being managed!");
         } else {
             try {
-                content = fs.readFileSync(this.state.pathToNewFolder + "/.fimaid", 'utf-8');
+                content = fs.readFileSync(path.join(this.state.pathToNewFolder, ".fimaid"), 'utf-8');
             } catch (err) {
                 folderExists = false;
             }
@@ -105,18 +110,18 @@ class Maid extends Component {
                 this.setState({ managedFolders: updatedManagedFolders });
             } else {
                 try {
-                    fs.writeFileSync(this.state.pathToNewFolder + "/.fimaid", this.state.pathToNewFolder, 'utf-8');
+                    fs.writeFileSync(path.join(this.state.pathToNewFolder, ".fimaid"), this.state.pathToNewFolder, 'utf-8');
                 } catch (err) {
                     console.log("ERROR");
                     console.log(err);
                 }
-                content = fs.readFileSync(this.state.pathToNewFolder + "/.fimaid", 'utf-8');
+                content = fs.readFileSync(path.join(this.state.pathToNewFolder, ".fimaid"), 'utf-8');
                 updatedManagedFolders.push(content);
                 this.setState({ managedFolders: updatedManagedFolders });
             }
 
             try {
-                fs.appendFileSync("/home/friij/PersonalProject/fileManager/fimaid/PROFILE", "\n" + this.state.pathToNewFolder, 'utf-8');
+                fs.appendFileSync(path.join(fileWithMainPath.mainPath, "PROFILE"), "\n" + this.state.pathToNewFolder, 'utf-8');
             } catch (err) {
                 console.log("ERROR");
                 console.log(err);
@@ -134,7 +139,7 @@ class Maid extends Component {
             });
 
             try {
-                fs.writeFileSync(this.state.pathToNewFolder + "/.fimaid.json", JSON.stringify(folder), 'utf-8');
+                fs.writeFileSync(path.join(this.state.pathToNewFolder + ".fimaid.json"), JSON.stringify(folder), 'utf-8');
             } catch (err) {
                 console.log("ERROR");
                 console.log(err);
@@ -142,8 +147,9 @@ class Maid extends Component {
         }
     }
 
-    folderScan(path) {
+    folderScan(pathFolder) {
         const fs = window.require('fs');
+        const path = require('path');
         var folder = {
             "name": "",
             "tags": [],
@@ -151,12 +157,12 @@ class Maid extends Component {
             "fileList": []
         }
 
-        folder.name = path;
-        var readDir = fs.readdirSync(path);
+        folder.name = pathFolder;
+        var readDir = fs.readdirSync(pathFolder);
 
         readDir.map(entry => {
             try {
-                folder.folderList.push(this.folderScan(path + "/" + entry));
+                folder.folderList.push(this.folderScan(path.join(pathFolder, entry)));
             } catch (err) {
                 folder.fileList.push(entry);
             }
@@ -171,14 +177,18 @@ class Maid extends Component {
     
     addTagToFolder() {
         const fs = window.require('fs');
+        const path = require('path');
         var content = "";
         var jsonExists = true;
         var jsonContent = [];
-        var arrayManagedFolder = this.state.activeFolderItem.split('/');
+        var arrayManagedFolder = this.state.activeFolderItem.split(path.sep);
         var pathManagedFolder = this.state.activeFolderItem;
-        arrayManagedFolder.shift();
-        var arrayTargetFolder = this.state.pathTargetedFolder.split('/');
-        arrayTargetFolder.shift();
+        var arrayTargetFolder = this.state.pathTargetedFolder.split(path.sep);
+
+        if (path.sep === '/') {
+            arrayManagedFolder.shift();
+            arrayTargetFolder.shift();
+        }
 
         var i;
         var j;
@@ -188,7 +198,7 @@ class Maid extends Component {
         }
 
         try {
-            content = fs.readFileSync(this.state.activeFolderItem + "/.fimaid.json", 'utf-8');
+            content = fs.readFileSync(path.join(this.state.activeFolderItem, ".fimaid.json"), 'utf-8');
         } catch (err) {
             jsonExists = false;
         }
@@ -200,7 +210,7 @@ class Maid extends Component {
                 jsonContent.tags.push(this.state.tagToAdd);
             }
  
-            pathManagedFolder += "/" + arrayTargetFolder.shift();
+            pathManagedFolder += path.sep + arrayTargetFolder.shift();
 
             for (j = 0; j < jsonContent.folderList.length; j++) {
                 if (pathManagedFolder === jsonContent.folderList[j].name) {
@@ -209,7 +219,7 @@ class Maid extends Component {
             }
 
             try {
-                fs.writeFileSync(this.state.activeFolderItem + "/.fimaid.json", JSON.stringify(jsonContent), 'utf-8')
+                fs.writeFileSync(path.join(this.state.activeFolderItem, ".fimaid.json"), JSON.stringify(jsonContent), 'utf-8')
             } catch (err) {
                 console.log("ERROR");
                 console.log(err);
@@ -217,18 +227,19 @@ class Maid extends Component {
         }
     }
 
-    addTagToFolderSon(path, arrayTargetFolder, tag, jsonContent) {
+    addTagToFolderSon(pathFolder, arrayTargetFolder, tag, jsonContent) {
+        const path = require('path');
         var j;
         
         if (!jsonContent.tags.includes(this.state.tagToAdd)) {
             jsonContent.tags.push(tag);
         }
 
-        path += "/" + arrayTargetFolder.shift();
+        pathFolder += path.sep + arrayTargetFolder.shift();
 
         for (j = 0; j < jsonContent.folderList.length; j++) {
-            if (path === jsonContent.folderList[j].name) {
-                jsonContent.folderList[j] = this.addTagToFolderSon(path, arrayTargetFolder, tag, jsonContent.folderList[j]);
+            if (pathFolder === jsonContent.folderList[j].name) {
+                jsonContent.folderList[j] = this.addTagToFolderSon(pathFolder, arrayTargetFolder, tag, jsonContent.folderList[j]);
             }
         }
 
@@ -250,17 +261,23 @@ class Maid extends Component {
 
     obtainListof(entry) {
         const fs = window.require('fs');
+        const path = require('path');
         var listOf = [];
         var fileExist = true;
         var content;
         var jsonContent;
-        var pathToTargetedFolder = this.state.pathTargetedFolder.split('/');
-        pathToTargetedFolder.shift();
+        var pathToTargetedFolder = this.state.pathTargetedFolder.split(path.sep);
         var pathTarget = "";
         var j;
 
+        if (path.sep === '\\') {
+            pathTarget = pathToTargetedFolder[0];
+        }
+
+        pathToTargetedFolder.shift();
+
         try {
-            content = fs.readFileSync(this.state.activeFolderItem + "/.fimaid.json", 'utf-8');
+            content = fs.readFileSync(path.join(this.state.activeFolderItem, ".fimaid.json"), 'utf-8');
         } catch (err) {
             fileExist = false;
         }
@@ -269,7 +286,7 @@ class Maid extends Component {
             jsonContent = JSON.parse(content);
 
             for (var i = 0; i < pathToTargetedFolder.length; i++) {
-                pathTarget += "/" + pathToTargetedFolder[i];
+                pathTarget += path.sep + pathToTargetedFolder[i];
 
                 for (j = 0; j < jsonContent.folderList.length; j++) {
                     if (pathTarget === jsonContent.folderList[j].name) {
@@ -351,13 +368,14 @@ class Maid extends Component {
 
     render() {
         const fs = window.require('fs');
+        const path = require('path');
         var folderList = [];
         var fileList = [];
         var tagList = [];
         var folderListForTags = this.obtainListof("folders");
         var folderListofTags;
         var active = "";
-        var colorList = [ 'red', 'orange', 'yellow', 'olive', 'green', 'teal', 'blue', 'violet', 'purple', 'pink' ];
+        var colorList = [ 'pink', 'orange', 'yellow', 'olive', 'teal', 'teal', 'blue', 'violet', 'purple', 'pink' ];
         var i;
 
         if (this.state.activeFolderItem !== "") {
@@ -365,9 +383,9 @@ class Maid extends Component {
     
             readDir.map(entry => {
                 try {
-                    this.folderScan(this.state.pathTargetedFolder + "/" + entry)
+                    this.folderScan(path.join(this.state.pathTargetedFolder, entry))
                     for (var i = 0; i < folderListForTags.length; i++) {
-                        if (this.state.pathTargetedFolder + "/" + entry === folderListForTags[i].name) {
+                        if (path.join(this.state.pathTargetedFolder, entry) === folderListForTags[i].name) {
                             folderListofTags = folderListForTags[i].tags;
                         }
                     }
@@ -380,24 +398,23 @@ class Maid extends Component {
 
         tagList = this.obtainListof("tags");
 
-        var allThePath = this.state.activeFolderItem.split('/');
-        allThePath.shift();
+        var allThePath = this.state.activeFolderItem.split(path.sep);
         active = allThePath[allThePath.length - 1];
-        var allTheTargetedPath = this.state.pathTargetedFolder.split('/');
-        allTheTargetedPath.shift();
+        var allTheTargetedPath = this.state.pathTargetedFolder.split(path.sep);
         var activeBread = allTheTargetedPath[allTheTargetedPath.length - 1];
 
-        var pathToBread = "";
+        var pathToBread = this.state.activeFolderItem;
         var breadcrumbsFolderPaths = [];
 
-        for (i = 0; i < allThePath.length; i++) {
-            pathToBread += "/" + allThePath[i];
+        if (path.sep === '/') {
+            allThePath.shift();
+            allTheTargetedPath.shift();
         }
 
         breadcrumbsFolderPaths.push({ "folder": active, "pathToFolder": pathToBread });
 
         for (i = 0; i < (allTheTargetedPath.length - allThePath.length); i++) {
-            pathToBread += "/" + allTheTargetedPath[i + allThePath.length];
+            pathToBread += path.sep + allTheTargetedPath[i + allThePath.length];
             breadcrumbsFolderPaths.push({ "folder": allTheTargetedPath[i + allThePath.length], "pathToFolder": pathToBread });
         }
 
