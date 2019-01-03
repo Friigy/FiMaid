@@ -1,5 +1,5 @@
 import React, { Component } from 'react';
-import { Grid, Input, Menu, Header, Icon, Container, Breadcrumb } from 'semantic-ui-react';
+import { Grid, Input, Menu, Header, Icon, Container, Breadcrumb, Label, Popup } from 'semantic-ui-react';
 
 class Maid extends Component {
     constructor(props, context) {
@@ -13,13 +13,19 @@ class Maid extends Component {
         this.activateFolderItem = this.activateFolderItem.bind(this);
         this.navigatingFolder = this.navigatingFolder.bind(this);
         this.navigatingBread = this.navigatingBread.bind(this);
+        this.obtainListof = this.obtainListof.bind(this);
+        this.handleChangeSearchTag = this.handleChangeSearchTag.bind(this);
+        this.addTagToSearch = this.addTagToSearch.bind(this);
 
         this.state = {
             pathToNewFolder: "",
             tagToAdd: "",
             managedFolders: [],
             activeFolderItem: "",
-            pathTargetedFolder: ""
+            pathTargetedFolder: "",
+            tagToSearch: "",
+            includeTag: [],
+            excludeTag: []
         };
     }
 
@@ -187,7 +193,9 @@ class Maid extends Component {
         if (jsonExists) {
             jsonContent = JSON.parse(content);
 
-            jsonContent.tags.push(this.state.tagToAdd);
+            if (!jsonContent.tags.includes(this.state.tagToAdd)) {
+                jsonContent.tags.push(this.state.tagToAdd);
+            }
 
             pathManagedFolder += "/" + arrayTargetFolder.shift();
 
@@ -209,7 +217,9 @@ class Maid extends Component {
     addTagToFolderSon(path, arrayTargetFolder, tag, jsonContent) {
         var j;
         
-        jsonContent.tags.push(tag);
+        if (!jsonContent.tags.includes(this.state.tagToAdd)) {
+            jsonContent.tags.push(tag);
+        }
 
         path += "/" + arrayTargetFolder.shift();
 
@@ -235,23 +245,95 @@ class Maid extends Component {
   
     navigatingBread = (newFolder) => this.setState({ pathTargetedFolder: newFolder });
 
+    obtainListof(entry) {
+        const fs = window.require('fs');
+        var listOf = [];
+        var fileExist = true;
+        var content;
+        var jsonContent;
+        var pathToTargetedFolder = this.state.pathTargetedFolder.split('/');
+        pathToTargetedFolder.shift();
+        var pathTarget = "";
+        var j;
+
+        try {
+            content = fs.readFileSync(this.state.activeFolderItem + "/.fimaid.json", 'utf-8');
+        } catch (err) {
+            fileExist = false;
+        }
+
+        if (fileExist) {
+            jsonContent = JSON.parse(content);
+
+            for (var i = 0; i < pathToTargetedFolder.length; i++) {
+                pathTarget += "/" + pathToTargetedFolder[i];
+
+                for (j = 0; j < jsonContent.folderList.length; j++) {
+                    if (pathTarget === jsonContent.folderList[j].name) {
+                        jsonContent = jsonContent.folderList[j];
+                    }
+                }
+            }
+            switch (entry) {
+                case "tags":
+                    listOf = jsonContent.tags;
+                    break;
+                case "folders":
+                    listOf = jsonContent.folderList;
+                    break;
+            }
+        }
+
+        return listOf;
+    }
+    
+    handleChangeSearchTag(e) {
+        this.setState({ tagToSearch: e.target.value });
+    }
+    
+    addTagToSearch() {
+        var tagToSearch = this.state.tagToSearch.split(',');
+        var newIncludeTags = this.state.includeTag;
+
+        for (var i = 0; i < tagToSearch.length; i++) {
+            if (!newIncludeTags.includes(tagToSearch[i])) {
+                newIncludeTags.push(tagToSearch[i]);
+            }
+        }
+
+        this.setState({ includeTag: newIncludeTags })
+    }
+
     render() {
         const fs = window.require('fs');
         var folderList = [];
         var fileList = [];
+        var tagList = [];
+        var folderListForTags = this.obtainListof("folders");
+        var folderListofTags;
         var active = "";
+        var colorList = [ 'red', 'orange', 'yellow', 'olive', 'green', 'teal', 'blue', 'violet', 'purple', 'pink' ];
+        var i;
+
         if (this.state.activeFolderItem !== "") {
             var readDir = fs.readdirSync(this.state.pathTargetedFolder);
     
             readDir.map(entry => {
                 try {
                     this.folderScan(this.state.pathTargetedFolder + "/" + entry)
-                    folderList.push(entry);
+                    for (var i = 0; i < folderListForTags.length; i++) {
+                        if (this.state.pathTargetedFolder + "/" + entry === folderListForTags[i].name) {
+                            folderListofTags = folderListForTags[i].tags;
+                        }
+                    }
+                    folderList.push({ "entry": entry, "tags": folderListofTags });
                 } catch (err) {
                     fileList.push(entry);
                 }
             });
         }
+
+        tagList = this.obtainListof("tags");
 
         var allThePath = this.state.activeFolderItem.split('/');
         allThePath.shift();
@@ -263,7 +345,7 @@ class Maid extends Component {
         var pathToBread = "";
         var breadcrumbsFolderPaths = [];
 
-        for (var i = 0; i < allThePath.length; i++) {
+        for (i = 0; i < allThePath.length; i++) {
             pathToBread += "/" + allThePath[i];
         }
 
@@ -273,6 +355,8 @@ class Maid extends Component {
             pathToBread += "/" + allTheTargetedPath[i + allThePath.length];
             breadcrumbsFolderPaths.push({ "folder": allTheTargetedPath[i + allThePath.length], "pathToFolder": pathToBread });
         }
+
+        var tagsToInclude = this.state.includeTag;
         return (
             <Grid>
                 <Grid.Column width={3}>
@@ -310,12 +394,16 @@ class Maid extends Component {
                     <Container fluid>
                         {
                             this.state.activeFolderItem !== "" ?
+                            <Header as='h2'>
+                                Tags for {activeBread}
+                            </Header>
+                            : null
+                        }
+                        {
+                            this.state.activeFolderItem !== "" ?
                             <Grid.Row>
-                                <Header as='h2'>
-                                    Tags for {activeBread}
-                                </Header>
                                 <Input
-                                    icon='tags'
+                                    icon='search'
                                     iconPosition='left'
                                     type='text'
                                     placeholder='tag'
@@ -323,6 +411,63 @@ class Maid extends Component {
                                     action={{ color: 'violet', content: 'Add', onClick: this.addTagToFolder }}
                                     actionPosition='right'
                                 />
+                            </Grid.Row>
+                            : null
+                        }
+                        <br/>
+                        {
+                            this.state.activeFolderItem !== "" ?
+                            <Grid.Row>
+                                {
+                                    tagList.map(tag => {
+                                        return (
+                                            <Label color={colorList[Math.floor((Math.random() * 10))]} image>
+                                                <Icon name='tags' /> {tag}
+                                            </Label>
+                                        )
+                                    })
+                                }
+                            </Grid.Row>
+                            : null
+                        }
+                        <br />
+                        {
+                            this.state.activeFolderItem !== "" ?
+                            <Grid.Row>
+                                <Popup
+                                    trigger={
+                                        <Input
+                                            icon='tags'
+                                            iconPosition='left'
+                                            type='text'
+                                            placeholder='Search for specific tags'
+                                            onChange={this.handleChangeSearchTag}
+                                            action={{ color: 'olive', content: 'Search', onClick: this.addTagToSearch }}
+                                            actionPosition='right'
+                                        />
+                                    }
+                                    content='Write your tags separated by a comma, no spaces "music,work,pictures,..."'
+                                    position='right center'
+                                    wide='very'
+                                    style={{ opacity: 0.7 }}
+                                    inverted
+                                />
+                            </Grid.Row>
+                            : null
+                        }
+                        <br/>
+                        {
+                            this.state.activeFolderItem !== "" ?
+                            <Grid.Row>
+                                {
+                                    tagsToInclude.map(tag => {
+                                        return (
+                                            <Label color='green' image>
+                                                <Icon name='tags' /> {tag}
+                                            </Label>
+                                        )
+                                    })
+                                }
                             </Grid.Row>
                             : null
                         }
@@ -369,19 +514,39 @@ class Maid extends Component {
                                 <Grid>
                                     {
                                         folderList.map(entry => {
+                                            var colorFolder = "";
+                                            var numberOfInclusion = [];
+                                            for (var i = 0; i < this.state.includeTag.length; i++) {
+                                                if (entry.tags.includes(this.state.includeTag[i])) {
+                                                    numberOfInclusion.push("true");
+                                                } else {
+                                                    numberOfInclusion.push("false");
+                                                }
+                                            }
+
+                                            console.log(numberOfInclusion)
+
+                                            if (numberOfInclusion.includes("true") && numberOfInclusion.includes("false")) {
+                                                colorFolder = "yellow";
+                                            } else if (numberOfInclusion.includes("true")) {
+                                                colorFolder = "green";
+                                            } else {
+                                                colorFolder = "black";
+                                            }
                                             return (
                                                 <Grid.Column width={2}>
-                                                    <Menu.Item onClick={this.navigatingFolder.bind(this, entry)}>
+                                                    <Menu.Item onClick={this.navigatingFolder.bind(this, entry.entry)}>
                                                         <Container textAlign='center'>
                                                                 <Icon
                                                                     name='folder'
                                                                     size='huge'
+                                                                    color={colorFolder}
                                                                 /> <br />
-                                                                {entry}
+                                                                {entry.entry}
                                                         </Container>
                                                     </Menu.Item>
                                                 </Grid.Column>
-                                            )
+                                            );
                                         })
                                     }
                                     {
@@ -402,7 +567,7 @@ class Maid extends Component {
                                         })
                                     }
                                 </Grid>
-                                : "Select a folder"
+                                : null
                             }
                         </Menu>
                     </Container>
