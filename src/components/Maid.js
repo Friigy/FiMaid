@@ -19,6 +19,7 @@ class Maid extends Component {
         this.addTagToInclude = this.addTagToInclude.bind(this);
         this.addTagToExclude = this.addTagToExclude.bind(this);
         this.deleteTagFromExclude = this.deleteTagFromExclude.bind(this);
+        this.deleteManagementFromProfile = this.deleteManagementFromProfile.bind(this);
 
         this.state = {
             pathToMain : "",
@@ -365,6 +366,32 @@ class Maid extends Component {
 
         this.setState({ excludeTag: newExcludeTags });
     }
+    
+    deleteManagementFromProfile(folder) {
+        const fs = window.require('fs');
+        const path = require('path');
+        const fileWithMainPath = require("../resources/mainPath.json");
+        var oldManagedFolders = this.state.managedFolders;
+        var newManagedFolders = [];
+
+        for (var i = 0; i < oldManagedFolders.length; i++) {
+            if (oldManagedFolders[i] !== folder) {
+                newManagedFolders.push(oldManagedFolders[i]);
+            }
+        }
+
+        try {
+            fs.writeFileSync(path.join(fileWithMainPath.mainPath, "PROFILE"), "Managed Folders:", 'utf-8');
+            newManagedFolders.map(managedFolders => {
+                fs.appendFileSync(path.join(fileWithMainPath.mainPath, "PROFILE"), "\n" + managedFolders, 'utf-8');
+            });
+        } catch (err) {
+            console.log("ERROR");
+            console.log(err);
+        }
+
+        this.setState({ managedFolders: newManagedFolders });
+    }
 
     render() {
         const fs = window.require('fs');
@@ -464,14 +491,24 @@ class Maid extends Component {
                         }
                         {
                             this.state.activeFolderItem === "" ?
+                            <Grid.Row>
+                                <Icon name='sync' size='big' color='green' /> Sync the folder
+                                <Icon name='delete' size='big' color='orange' /> Stop managing the folder in this profile
+                                <Icon name='trash alternate' size='big' color='red' /> Delete all management of this folder (Careful: Delete all traces of tags...)
+                            </Grid.Row>
+                            : null
+                        }
+                        {
+                            this.state.activeFolderItem === "" ?
                             <List divided verticalAlign='middle'>
                                 {
                                     this.state.managedFolders.map(folder => {
                                         return (
                                             <List.Item>
                                             <List.Content floated='right'>
-                                                <Icon name='refresh' size='big' color='green' />
-                                                <Icon name='delete' size='big' color='red' />
+                                                <Icon name='sync' size='big' color='green' />
+                                                <Icon name='delete' size='big' color='orange' onClick={this.deleteManagementFromProfile.bind(this, folder)}/>
+                                                <Icon name='trash alternate' size='big' color='red' />
                                             </List.Content>
                                                 <List.Icon name='right angle' size='big' />
                                                 <List.Content>{folder}</List.Content>
