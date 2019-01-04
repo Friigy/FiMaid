@@ -16,7 +16,7 @@ try {
 }
 
 try {
-    content = fs.readFileSync(path.join(path.dirname(process.mainModule.filename), "src", "resources", "mainPath"), 'utf-8');
+    content = fs.readFileSync(path.join(path.dirname(process.mainModule.filename), "src", "resources", "mainPath.json"), 'utf-8');
 } catch (err) {
     resourceExist = false;
 }
@@ -31,8 +31,11 @@ if (!profileExist) {
 }
 
 if (!resourceExist) {
+    var jsonPath = {
+        "mainPath": path.dirname(process.mainModule.filename)
+    }
     try {
-        fs.writeFileSync(path.join(path.dirname(process.mainModule.filename), "src", "resources", "mainPath"), path.dirname(process.mainModule.filename), 'utf-8');
+        fs.writeFileSync(path.join(path.dirname(process.mainModule.filename), "src", "resources", "mainPath.json"), JSON.stringify(jsonPath), 'utf-8');
     } catch (err) {
         console.log("ERROR");
         console.log(err);

@@ -1,5 +1,5 @@
 import React, { Component } from 'react';
-import { Grid, Input, Menu, Header, Icon, Container, Breadcrumb, Label, Popup } from 'semantic-ui-react';
+import { Grid, Input, Menu, Header, Icon, Container, Breadcrumb, Label, Popup, List, Button } from 'semantic-ui-react';
 
 class Maid extends Component {
     constructor(props, context) {
@@ -86,7 +86,7 @@ class Maid extends Component {
         var content = "";
         var folderExists = true;
         var updatedManagedFolders = this.state.managedFolders;
-        const fileWithMainPath = require(path.join("..", "resources", "mainPath.json"));
+        const fileWithMainPath = require("../resources/mainPath.json");
         var folder = {
             "name": "",
             "tags": [],
@@ -455,6 +455,35 @@ class Maid extends Component {
 
                 <Grid.Column stretched width={13}>
                     <Container fluid>
+                        {
+                            this.state.activeFolderItem === "" ?
+                            <Header as='h2'>
+                                Manage your folders
+                            </Header>
+                            : null
+                        }
+                        {
+                            this.state.activeFolderItem === "" ?
+                            <List divided verticalAlign='middle'>
+                                {
+                                    this.state.managedFolders.map(folder => {
+                                        return (
+                                            <List.Item>
+                                            <List.Content floated='right'>
+                                                <Icon name='refresh' size='big' color='green' />
+                                                <Icon name='delete' size='big' color='red' />
+                                            </List.Content>
+                                                <List.Icon name='right angle' size='big' />
+                                                <List.Content>{folder}</List.Content>
+                                            </List.Item>
+                                        )
+                                    })
+                                }
+                            </List>
+                            : null
+                        }
+
+
                         {
                             this.state.activeFolderItem !== "" ?
                             <Header as='h2'>
