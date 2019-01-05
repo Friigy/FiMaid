@@ -140,7 +140,7 @@ class Maid extends Component {
             });
 
             try {
-                fs.writeFileSync(path.join(this.state.pathToNewFolder + "fimaid.json"), JSON.stringify(folder), 'utf-8');
+                fs.writeFileSync(path.join(this.state.pathToNewFolder, "fimaid.json"), JSON.stringify(folder), 'utf-8');
             } catch (err) {
                 console.log("ERROR");
                 console.log(err);
