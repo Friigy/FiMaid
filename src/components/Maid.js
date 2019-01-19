@@ -20,6 +20,8 @@ class Maid extends Component {
         this.addTagToExclude = this.addTagToExclude.bind(this);
         this.deleteTagFromExclude = this.deleteTagFromExclude.bind(this);
         this.deleteManagementFromProfile = this.deleteManagementFromProfile.bind(this);
+        this.syncJSONFolder = this.syncJSONFolder.bind(this);
+        this.syncJSONFolderSon = this.syncJSONFolderSon.bind(this);
 
         this.state = {
             pathToMain : "",
@@ -133,7 +135,7 @@ class Maid extends Component {
 
             readDir.map(entry => {
                 try {
-                    folder.folderList.push(this.folderScan(this.state.pathToNewFolder + "/" + entry));
+                    folder.folderList.push(this.folderScan(path.join(this.state.pathToNewFolder, entry)));
                 } catch (err) {
                     folder.fileList.push(entry);
                 }
@@ -393,6 +395,161 @@ class Maid extends Component {
         this.setState({ managedFolders: newManagedFolders });
     }
 
+    syncJSONFolder(managedFolder) {
+        const fs = window.require('fs');
+        const path = require('path');
+        var content = "";
+        var currentJsonContent = "";
+        var jsonExists = true;
+        var folderExists = false;
+        var folder = {
+            "name": "",
+            "tags": [],
+            "folderList": [],
+            "fileList": []
+        }
+        var i;
+        var j;
+        var newFileList = [];
+        var newFolderList = [];
+        var tmpFileList = [];
+        var tmpFolderList = [];
+
+        try {
+            content = fs.readFileSync(path.join(managedFolder, ".fimaid.json"), 'utf-8');
+        } catch (err) {
+            jsonExists = false;
+        }
+
+        if (jsonExists) {
+            currentJsonContent = JSON.parse(content);
+            
+            var readDir = fs.readdirSync(managedFolder);
+
+            readDir.map(entry => {
+                try {
+                    var readDirNew = fs.readdirSync(path.join(managedFolder, entry))
+                    newFolderList.push(path.join(managedFolder, entry));
+                } catch (err) {
+                    newFileList.push(entry);
+                }
+            });
+
+            // FILE VERIF
+            // New
+            for (i = 0; i < newFileList.length; i++) {
+                if (!currentJsonContent.fileList.includes(newFileList[i])) {
+                    currentJsonContent.fileList.push(newFileList[i]);
+                }
+            }
+            // Deletion
+            for (i = 0; i < currentJsonContent.fileList.length; i++) {
+                if (newFileList.includes(currentJsonContent.fileList[i])) {
+                    tmpFileList.push(currentJsonContent.fileList[i]);
+                }
+            }
+            currentJsonContent.fileList = tmpFileList;
+
+            // FOLDER VERIF
+            // New
+            for (i = 0; i < newFolderList.length; i++) {
+                folderExists = false;
+                for (j = 0; j < currentJsonContent.folderList.length; j++) {
+                    if (newFolderList[i] === currentJsonContent.folderList[j].name) {
+                        folderExists = true;
+                    }
+                }
+                if (!folderExists) {
+                    tmpFolderList.push(this.folderScan(newFolderList[i]));
+                }
+            }
+            // Deletion
+            for (i = 0; i < currentJsonContent.folderList.length; i++) {
+                for (j = 0; j < newFolderList.length; j++) {
+                    if (newFolderList[j] === currentJsonContent.folderList[i].name) {
+                        tmpFolderList.push(this.syncJSONFolderSon(newFolderList[j], currentJsonContent.folderList[i]));
+                    }
+                }
+            }
+            currentJsonContent.folderList = tmpFolderList;
+
+            try {
+                fs.writeFileSync(path.join(managedFolder, ".fimaid.json"), JSON.stringify(currentJsonContent), 'utf-8');
+            } catch (err) {
+                console.log("ERROR");
+                console.log(err);
+            }
+        }
+    }
+
+    syncJSONFolderSon(managedFolder, oldFolder) {
+        const fs = window.require('fs');
+        const path = require('path');
+        var folderExists = false;
+        var folder = {
+            "name": "",
+            "tags": [],
+            "folderList": [],
+            "fileList": []
+        }
+        var i;
+        var j;
+        var newFileList = [];
+        var newFolderList = [];
+        var tmpFileList = [];
+        var tmpFolderList = [];
+            
+        var readDir = fs.readdirSync(managedFolder);
+
+        readDir.map(entry => {
+            try {
+                var readDirNew = fs.readdirSync(path.join(managedFolder, entry))
+                newFolderList.push(path.join(managedFolder, entry));
+            } catch (err) {
+                newFileList.push(entry);
+            }
+        });
+        // FILE VERIF
+        // New
+        for (i = 0; i < newFileList.length; i++) {
+            if (!oldFolder.fileList.includes(newFileList[i])) {
+                oldFolder.fileList.push(newFileList[i]);
+            }
+        }
+        // Deletion
+        for (i = 0; i < oldFolder.fileList.length; i++) {
+            if (newFileList.includes(oldFolder.fileList[i])) {
+                tmpFileList.push(oldFolder.fileList[i]);
+            }
+        }
+        oldFolder.fileList = tmpFileList;
+
+        // FOLDER VERIF
+        // New
+        for (i = 0; i < newFolderList.length; i++) {
+            folderExists = false;
+            for (j = 0; j < oldFolder.folderList.length; j++) {
+                if (newFolderList[i] === oldFolder.folderList[j].name) {
+                    folderExists = true;
+                }
+            }
+            if (!folderExists) {
+                tmpFolderList.push(this.folderScan(newFolderList[i]));
+            }
+        }
+        // Deletion
+        for (i = 0; i < oldFolder.folderList.length; i++) {
+            for (j = 0; j < newFolderList.length; j++) {
+                if (newFolderList[j] === oldFolder.folderList[i].name) {
+                    tmpFolderList.push(this.syncJSONFolderSon(newFolderList[j], oldFolder.folderList[i]));
+                }
+            }
+        }
+        oldFolder.folderList = tmpFolderList;
+
+        return oldFolder;
+    }
+
     render() {
         const fs = window.require('fs');
         const path = require('path');
@@ -505,11 +662,11 @@ class Maid extends Component {
                                     this.state.managedFolders.map(folder => {
                                         return (
                                             <List.Item>
-                                            <List.Content floated='right'>
-                                                <Icon name='sync' size='big' color='green' />
-                                                <Icon name='delete' size='big' color='orange' onClick={this.deleteManagementFromProfile.bind(this, folder)}/>
-                                                <Icon name='trash alternate' size='big' color='red' />
-                                            </List.Content>
+                                                <List.Content floated='right'>
+                                                    <Icon name='sync' size='big' color='green' onClick={this.syncJSONFolder.bind(this, folder)} />
+                                                    <Icon name='delete' size='big' color='orange' onClick={this.deleteManagementFromProfile.bind(this, folder)}/>
+                                                    <Icon name='trash alternate' size='big' color='red' />
+                                                </List.Content>
                                                 <List.Icon name='right angle' size='big' />
                                                 <List.Content>{folder}</List.Content>
                                             </List.Item>
