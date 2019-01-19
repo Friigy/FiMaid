@@ -9,12 +9,15 @@
     "react-scripts": "2.1.2",
     "semantic-ui-css": "^2.4.1"
   },
+  "homepage": "./",
   "main": "main.js",
   "scripts": {
     "start": "react-scripts start",
     "build": "react-scripts build",
     "test": "react-scripts test",
-    "eject": "react-scripts eject"
+    "eject": "react-scripts eject",
+    "electron": "electron .",
+    "dev": "nf start"
   },
   "eslintConfig": {
     "extends": "react-app"
@@ -24,5 +27,8 @@
     "not dead",
     "not ie <= 11",
     "not op_mini all"
-  ]
+  ],
+  "devDependencies": {
+    "foreman": "^3.0.1"
+  }
 }

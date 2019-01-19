@@ -46,8 +46,14 @@ function createWindow() {
     // Initialize the window to our specified dimensions
     win = new BrowserWindow({ width: 1600, height: 900 });
 
+    const startUrl = process.env.ELECTRON_START_URL || URL.format({
+        pathname: path.join(__dirname, './build/index.html'),
+        protocol: 'file:',
+        slashes: true
+    })
+
     // Specify entry point
-    win.loadURL('http://localhost:3000/');
+    win.loadURL(startUrl);
 
     // Show some dev tools
     // Remove this line before distributing
