@@ -1,34 +1,63 @@
 {
-  "name": "fimaid",
-  "version": "0.1.0",
-  "private": true,
-  "dependencies": {
-    "react": "^16.7.0",
-    "react-dom": "^16.7.0",
-    "react-router": "^4.3.1",
-    "react-scripts": "2.1.2",
-    "semantic-ui-css": "^2.4.1"
-  },
-  "homepage": "./",
-  "main": "main.js",
-  "scripts": {
-    "start": "react-scripts start",
-    "build": "react-scripts build",
-    "test": "react-scripts test",
-    "eject": "react-scripts eject",
-    "electron": "electron .",
-    "dev": "nf start"
-  },
-  "eslintConfig": {
-    "extends": "react-app"
-  },
-  "browserslist": [
-    ">0.2%",
-    "not dead",
-    "not ie <= 11",
-    "not op_mini all"
-  ],
-  "devDependencies": {
-    "foreman": "^3.0.1"
+    "name": "fimaid",
+    "description": "Your personal file and folder manager!",
+    "homepage": "./",
+    "author": {
+      "name": "friij",
+      "email": "paul.lachatte.pron@gmail.com"
+    },
+    "license": "lulpotato",
+    "repositery": {
+      "type": "git",
+      "url": "https://github.com/Friigy/FiMaid"
+    },
+    "version": "0.1.0",
+    "private": true,
+    "dependencies": {
+      "react": "^16.7.0",
+      "react-dom": "^16.7.0",
+      "react-router": "^4.3.1",
+      "react-scripts": "2.1.2",
+      "semantic-ui-css": "^2.4.1"
+    },
+    "main": "public/electron.js",
+    "scripts": {
+      "start": "react-scripts start",
+      "build": "react-scripts build",
+      "test": "react-scripts test",
+      "eject": "react-scripts eject",
+      "electron": "electron .",
+      "dev": "nf start",
+      "pack": "electron-builder --dr -c.extraMetadata.main=build/electron.js",
+      "dist": "electron-builder --win --linux deb -c.extraMetadata.main=build/electron.js",
+      "tryinghard": "yarn build && yarn dist",
+      "postinstall": "electron-builder install-app-deps"
+    },
+    "eslintConfig": {
+      "extends": "react-app"
+    },
+    "browserslist": [
+      ">0.2%",
+      "not dead",
+      "not ie <= 11",
+      "not op_mini all"
+    ],
+    "devDependencies": {
+      "electron-builder": "^20.38.5",
+      "foreman": "^3.0.1",
+      "semantic-ui-react": "^0.84.0"
+    },
+    "build": {
+      "appId": "com.fimaid",
+      "directories": {
+        "buildResources": "public"
+      },
+      "files": [
+        "public/*",
+        "build/**/*",
+        "node_modules/**/*"
+      ],
+      "extends": null
+    }
   }
-}
+  

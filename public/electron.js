@@ -45,12 +45,10 @@ if (!resourceExist) {
 function createWindow() {
     // Initialize the window to our specified dimensions
     win = new BrowserWindow({ width: 1600, height: 900 });
-
-    const startUrl = process.env.ELECTRON_START_URL || URL.format({
-        pathname: path.join(__dirname, './build/index.html'),
-        protocol: 'file:',
-        slashes: true
-    })
+    
+    // Because i'm a dirty little boy
+    // const startUrl = process.env.ELECTRON_START_URL;
+    const startUrl = `file://${path.join(__dirname, "../build/index.html")}`;
 
     // Specify entry point
     win.loadURL(startUrl);
@@ -58,7 +56,7 @@ function createWindow() {
     // Show some dev tools
     // Remove this line before distributing
     // NB: Open the browser inspector
-    win.webContents.openDevTools();
+    // win.webContents.openDevTools();
 
     // Remove window once app is closed
     win.on('closed', function() {

@@ -24,3 +24,4 @@ yarn-error.log*
 
 PROFILE
 /src/resources/mainPath.json
+/dist
